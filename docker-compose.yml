@@ -1,0 +1,26 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: pano-dental-backend
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      # 掛載模型權重，方便外部抽換模型而無需重建映像
+      - ./backend/app/model/weights:/app/app/model/weights
+      # 掛載上傳目錄，保留使用者上傳的圖片
+      - ./backend/uploads:/app/uploads
+    env_file:
+      - ./backend/.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  tunnel:
+    image: cloudflare/cloudflared
+    container_name: pano-dental-tunnel
+    command: tunnel --url http://backend:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
